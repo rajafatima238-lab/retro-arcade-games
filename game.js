@@ -49,36 +49,33 @@ window.addEventListener("keydown", (e) => {
 });
 window.addEventListener("keyup", (e) => keys[e.key] = false);
 
-// --- TOUCH & CLICK CONTROLS (For Mobile & Mouse) ---
+// --- TOUCH & CLICK CONTROLS (Fixing features for Mobile) ---
 
-// 1. Click ya Tap karne se laser shoot ho (Game Over menu par click alg handle hoga)
+// Screen tap to shoot laser
 canvas.addEventListener("click", (e) => {
     if (!gameIsOn) {
         handleMenuClick(e);
         return;
     }
-    fireLaser(); // Agar game chal rahi hai toh tap karne se goli chalegi
+    fireLaser(); 
 });
 
-// 2. Touch Move (Mobile par finger ghumane se ship left/right move karega)
+// Touch Move for smooth ship translation
 canvas.addEventListener("touchmove", (e) => {
     if (!gameIsOn) return;
-    e.preventDefault(); // Screen scroll hone se rokne ke liye
+    e.preventDefault(); 
     
     let touch = e.touches[0];
     const rect = canvas.getBoundingClientRect();
-    // Canvas coordinate matrix translation
     let touchX = ((touch.clientX - rect.left) / rect.width) * canvas.width;
     
-    // Ship ko finger ke center mein rakhne ke liye
     player.x = touchX - player.width / 2;
 
-    // Boundaries check
     if (player.x < 0) player.x = 0;
     if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
 }, { passive: false });
 
-// 3. Mouse Move (Laptop trackpad ya mouse se bhi drag karne ke liye optional)
+// Mouse drag fallback
 canvas.addEventListener("mousemove", (e) => {
     if (!gameIsOn) return;
     const rect = canvas.getBoundingClientRect();
@@ -89,30 +86,27 @@ canvas.addEventListener("mousemove", (e) => {
     if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
 });
 
-
 function setupGame() {
     invaders = [];
     lasers = [];
     rowSpawnCooldown = 0;
     
+    // Original Invader Matrix Rows Setup
     for (let r = 0; r < 4; r++) {
         addNewRowAtTop(70 + r * (invaderHeight + invaderPadding), r);
     }
 
+    // Original Continuous Green Bunkers Setup
     bunkers = [];
     let bunkerPositions = [100, 260, 440, 620]; 
     bunkerPositions.forEach(bx => {
-        for (let row = 0; row < 3; row++) {
-            for (let col = 0; col < 5; col++) {
-                bunkers.push({
-                    x: bx + col * 12,
-                    y: 470 + row * 10,
-                    width: 12,
-                    height: 10,
-                    health: 3 
-                });
-            }
-        }
+        bunkers.push({
+            x: bx,
+            y: 470,
+            width: 70,    // Your original full size block
+            height: 25,   // Your original height
+            health: 3 
+        });
     });
 }
 
@@ -147,7 +141,6 @@ function fireLaser() {
 }
 
 function handleInput() {
-    // Keyboard fallback input
     if (keys["ArrowLeft"] || keys["a"] || keys["A"]) {
         if (player.x > 0) player.x -= player.speed;
     }
@@ -157,13 +150,12 @@ function handleInput() {
 }
 
 function gameLoop() {
-    ctx.fillStyle = "#020205";
+    ctx.fillStyle = "#000000"; // Pitch black like original
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     if (gameIsOn) {
         handleInput();
 
-        // 1. Process Lasers
         for (let i = lasers.length - 1; i >= 0; i--) {
             lasers[i].y -= lasers[i].speed;
             if (lasers[i].y < 0) {
@@ -171,7 +163,6 @@ function gameLoop() {
             }
         }
 
-        // 2. Invaders Grid Matrix Translation
         let shiftDown = false;
         invaders.forEach(inv => {
             inv.x += invaderSpeedX * invaderDirection;
@@ -205,7 +196,7 @@ function gameLoop() {
             }
         }
 
-        // 3. Collision Engine
+        // Collision Setup for Original Features
         for (let l = lasers.length - 1; l >= 0; l--) {
             let laserHit = false;
 
@@ -262,17 +253,17 @@ function gameLoop() {
 }
 
 function drawObjects() {
+    // Score Bar
     ctx.fillStyle = "white";
     ctx.font = "bold 16px Courier New";
     ctx.textAlign = "center";
     ctx.fillText(`SCORE: ${score}    HIGH SCORE: ${highScore}`, canvas.width / 2, 35);
 
-    // Instructions hint on screen
-    ctx.fillStyle = "#444466";
+    ctx.fillStyle = "#666666";
     ctx.font = "12px Courier New";
     ctx.fillText("Laptop: Use Arrows & Spacebar | Mobile: Drag ship & Tap screen to fire", canvas.width / 2, 55);
 
-    // Spaceship
+    // Original Green Spaceship Triangle
     ctx.fillStyle = player.color;
     ctx.beginPath();
     ctx.moveTo(player.x + player.width / 2, player.y);
@@ -281,7 +272,7 @@ function drawObjects() {
     ctx.fill();
     ctx.closePath();
 
-    // Bunkers
+    // Original Solid Bunkers
     bunkers.forEach(bunk => {
         if (bunk.health === 3) ctx.fillStyle = "#00cc44"; 
         else if (bunk.health === 2) ctx.fillStyle = "#cca300"; 
@@ -289,13 +280,13 @@ function drawObjects() {
         ctx.fillRect(bunk.x, bunk.y, bunk.width, bunk.height);
     });
 
-    // Lasers
+    // Yellow Lasers
     ctx.fillStyle = "#ffff00";
     lasers.forEach(l => {
         ctx.fillRect(l.x, l.y, l.width, l.height);
     });
 
-    // Invaders Grid
+    // Original Classic Invaders UI Design
     invaders.forEach(inv => {
         ctx.fillStyle = inv.color;
         ctx.fillRect(inv.x, inv.y, inv.width, inv.height);
@@ -306,49 +297,40 @@ function drawObjects() {
 }
 
 function showGameOverMenu() {
-    ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+    ctx.fillStyle = "rgba(0, 0, 0, 0.9)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.fillStyle = "#ff0055";
     ctx.font = "bold 32px Courier New";
     ctx.textAlign = "center";
-    ctx.fillText("GALAXY OVERRUN", canvas.width / 2, 220);
+    ctx.fillText("GAME OVER", canvas.width / 2, 220);
 
     ctx.fillStyle = "white";
     ctx.font = "bold 20px Courier New";
-    ctx.fillText(`Final Defense Score: ${score}`, canvas.width / 2, 270);
+    ctx.fillText(`Final Score: ${score}`, canvas.width / 2, 270);
 
     // RESTART Button
-    ctx.fillStyle = "green";
+    ctx.fillStyle = "#00cc44";
     ctx.fillRect(290, 340, 100, 40);
     ctx.fillStyle = "white";
-    ctx.font = "bold 12px Arial";
-    ctx.fillText("RESTART", 340, 364);
+    ctx.font = "bold 14px Courier New";
+    ctx.fillText("RESTART", 340, 365);
 
     // CLOSE Button
-    ctx.fillStyle = "gray";
+    ctx.fillStyle = "#555555";
     ctx.fillRect(410, 340, 100, 40);
     ctx.fillStyle = "white";
-    ctx.fillText("CLOSE", 460, 364);
+    ctx.fillText("CLOSE", 460, 365);
 }
 
 function showExitScreen() {
-    ctx.fillStyle = "#02020a";
+    ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    ctx.fillStyle = "#ff4500"; 
-    ctx.font = "bold 40px Courier New";
-    ctx.textAlign = "center";
-    ctx.fillText("SESSION TERMINATED", canvas.width / 2, canvas.height / 2 - 60);
-
     ctx.fillStyle = "#00ff66"; 
-    ctx.font = "bold 24px Courier New";
-    ctx.fillText("Thank you for defending the Galaxy!", canvas.width / 2, canvas.height / 2);
-
-    ctx.fillStyle = "#aaaaaa";
-    ctx.font = "18px Courier New";
-    ctx.fillText("This game module is now inactive.", canvas.width / 2, canvas.height / 2 + 50);
-    ctx.fillText("You can safely close this browser tab.", canvas.width / 2, canvas.height / 2 + 80);
+    ctx.font = "bold 28px Courier New";
+    ctx.textAlign = "center";
+    ctx.fillText("Game Closed Successfully", canvas.width / 2, canvas.height / 2);
 }
 
 function handleMenuClick(e) {
