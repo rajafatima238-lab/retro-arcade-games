@@ -19,7 +19,6 @@ let player = {
 // --- Arrays ---
 let lasers = [];
 let invaders = [];
-let bunkers = [];
 
 // Invaders Configuration
 let invaderWidth = 40;
@@ -31,9 +30,6 @@ let invaderOffsetLeft = 80;
 let invaderSpeedX = 2.0; 
 let invaderSpeedY = 15;
 let invaderDirection = 1; 
-
-let rowSpawnCooldown = 0;
-const SPAWN_DELAY_LIMIT = 2;
 
 // --- Keyboard Listeners (For Laptop) ---
 let keys = {};
@@ -49,7 +45,7 @@ window.addEventListener("keydown", (e) => {
 });
 window.addEventListener("keyup", (e) => keys[e.key] = false);
 
-// --- TOUCH & CLICK CONTROLS (Fixing features for Mobile) ---
+// --- TOUCH & CLICK CONTROLS (Only for Responsive Controls) ---
 
 // Screen tap to shoot laser
 canvas.addEventListener("click", (e) => {
@@ -60,7 +56,7 @@ canvas.addEventListener("click", (e) => {
     fireLaser(); 
 });
 
-// Touch Move for smooth ship translation
+// Touch Move for smooth ship translation on mobile
 canvas.addEventListener("touchmove", (e) => {
     if (!gameIsOn) return;
     e.preventDefault(); 
@@ -89,40 +85,22 @@ canvas.addEventListener("mousemove", (e) => {
 function setupGame() {
     invaders = [];
     lasers = [];
-    rowSpawnCooldown = 0;
     
-    // Original Invader Matrix Rows Setup
-    for (let r = 0; r < 4; r++) {
-        addNewRowAtTop(70 + r * (invaderHeight + invaderPadding), r);
-    }
+    // Core Invaders Setup (Bunkers array aur extra top rows bilkul REMOVE kar di hain)
+    for (let r = 0; r < 3; r++) {
+        let colors = ["#ff00ff", "#00ffff", "#ffff00"];
+        let rowColor = colors[r % colors.length];
 
-    // Original Continuous Green Bunkers Setup
-    bunkers = [];
-    let bunkerPositions = [100, 260, 440, 620]; 
-    bunkerPositions.forEach(bx => {
-        bunkers.push({
-            x: bx,
-            y: 470,
-            width: 70,    // Your original full size block
-            height: 25,   // Your original height
-            health: 3 
-        });
-    });
-}
-
-function addNewRowAtTop(yPosition, rowIndex) {
-    let colors = ["#ff00ff", "#00ffff", "#ffff00", "#ff3300"];
-    let rowColor = colors[rowIndex % colors.length];
-
-    for (let c = 0; c < invaderCols; c++) {
-        let invaderX = (c * (invaderWidth + invaderPadding)) + invaderOffsetLeft;
-        invaders.push({
-            x: invaderX,
-            y: yPosition,
-            width: invaderWidth,
-            height: invaderHeight,
-            color: rowColor
-        });
+        for (let c = 0; c < invaderCols; c++) {
+            let invaderX = (c * (invaderWidth + invaderPadding)) + invaderOffsetLeft;
+            invaders.push({
+                x: invaderX,
+                y: 100 + r * (invaderHeight + invaderPadding),
+                width: invaderWidth,
+                height: invaderHeight,
+                color: rowColor
+            });
+        }
     }
 }
 
@@ -150,7 +128,7 @@ function handleInput() {
 }
 
 function gameLoop() {
-    ctx.fillStyle = "#000000"; // Pitch black like original
+    ctx.fillStyle = "#000000"; 
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     if (gameIsOn) {
@@ -173,30 +151,15 @@ function gameLoop() {
 
         if (shiftDown) {
             invaderDirection *= -1;
-            rowSpawnCooldown++;
-
-            let highestY = canvas.height;
-            invaders.forEach(inv => {
-                if (inv.y < highestY) highestY = inv.y;
-            });
-
-            let newRowY = highestY - (invaderHeight + invaderPadding);
-
             invaders.forEach(inv => {
                 inv.y += invaderSpeedY;
                 if (inv.y + inv.height >= player.y) {
                     gameIsOn = false; 
                 }
             });
-
-            if (newRowY >= 20 && rowSpawnCooldown >= SPAWN_DELAY_LIMIT) {
-                let randomRowIndex = Math.floor(Math.random() * 10);
-                addNewRowAtTop(newRowY, randomRowIndex);
-                rowSpawnCooldown = 0; 
-            }
         }
 
-        // Collision Setup for Original Features
+        // Laser Hit Matrix Collision
         for (let l = lasers.length - 1; l >= 0; l--) {
             let laserHit = false;
 
@@ -217,27 +180,7 @@ function gameLoop() {
                     break; 
                 }
             }
-
             if (laserHit) continue;
-
-            for (let b = bunkers.length - 1; b >= 0; b--) {
-                let laser = lasers[l];
-                let bunk = bunkers[b];
-
-                if (laser.x < bunk.x + bunk.width &&
-                    laser.x + laser.width > bunk.x &&
-                    laser.y < bunk.y + bunk.height &&
-                    laser.y + laser.height > bunk.y) {
-                    
-                    bunk.health--;
-                    lasers.splice(l, 1); 
-
-                    if (bunk.health <= 0) {
-                        bunkers.splice(b, 1); 
-                    }
-                    break;
-                }
-            }
         }
 
         if (invaders.length === 0) {
@@ -253,7 +196,7 @@ function gameLoop() {
 }
 
 function drawObjects() {
-    // Score Bar
+    // Score Dashboard
     ctx.fillStyle = "white";
     ctx.font = "bold 16px Courier New";
     ctx.textAlign = "center";
@@ -263,7 +206,7 @@ function drawObjects() {
     ctx.font = "12px Courier New";
     ctx.fillText("Laptop: Use Arrows & Spacebar | Mobile: Drag ship & Tap screen to fire", canvas.width / 2, 55);
 
-    // Original Green Spaceship Triangle
+    // Green Spaceship Triangle
     ctx.fillStyle = player.color;
     ctx.beginPath();
     ctx.moveTo(player.x + player.width / 2, player.y);
@@ -272,21 +215,13 @@ function drawObjects() {
     ctx.fill();
     ctx.closePath();
 
-    // Original Solid Bunkers
-    bunkers.forEach(bunk => {
-        if (bunk.health === 3) ctx.fillStyle = "#00cc44"; 
-        else if (bunk.health === 2) ctx.fillStyle = "#cca300"; 
-        else ctx.fillStyle = "#cc3300"; 
-        ctx.fillRect(bunk.x, bunk.y, bunk.width, bunk.height);
-    });
-
     // Yellow Lasers
     ctx.fillStyle = "#ffff00";
     lasers.forEach(l => {
         ctx.fillRect(l.x, l.y, l.width, l.height);
     });
 
-    // Original Classic Invaders UI Design
+    // Classic Custom Invaders
     invaders.forEach(inv => {
         ctx.fillStyle = inv.color;
         ctx.fillRect(inv.x, inv.y, inv.width, inv.height);
