@@ -3,43 +3,160 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Save the Stars - Web Edition</title>
+    <title>Fatima's Retro Arcade Hub</title>
     <style>
         body {
-            background-color: #0b0d1b;
-            color: white;
+            background: radial-gradient(circle, #0c081a 0%, #03010a 100%);
+            color: #fff;
             font-family: 'Courier New', Courier, monospace;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #00ffcc;
+            font-size: 3rem;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-shadow: 0 0 20px rgba(0, 255, 204, 0.6), 0 0 40px rgba(0, 255, 204, 0.3);
+            margin-bottom: 5px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #ff0077;
+            font-size: 1.2rem;
+            margin-bottom: 40px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(255, 0, 119, 0.5);
+            text-align: center;
+        }
+
+        .arcade-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        .game-card {
+            background: rgba(15, 10, 30, 0.85);
+            border: 2px solid #3d1e6d;
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            text-decoration: none;
+            color: white;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            position: relative;
             overflow: hidden;
         }
-        h1 {
-            color: #ffd700;
-            margin-bottom: 10px;
-            text-shadow: 0px 0px 12px rgba(255, 215, 0, 0.4);
+
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: 0.5s;
         }
-        canvas {
-            border: 4px solid #ffd700;
-            background-color: #000000;
-            box-shadow: 0px 0px 25px rgba(255, 215, 0, 0.2);
+
+        .game-card:hover {
+            transform: translateY(-8px);
+            border-color: #00ffcc;
+            box-shadow: 0 0 25px rgba(0, 255, 204, 0.4);
         }
-        .footer {
+
+        .game-card:hover::before {
+            left: 100%;
+        }
+
+        .game-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.5rem;
+            color: #ff0077;
+            transition: color 0.3s;
+        }
+
+        .game-card:hover h3 {
+            color: #00ffcc;
+        }
+
+        .game-card p {
+            font-size: 0.9rem;
+            color: #8a85a3;
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .badge {
+            display: inline-block;
             margin-top: 15px;
-            color: #555577;
-            font-size: 14px;
+            padding: 5px 12px;
+            background: #1a0f33;
+            border: 1px solid #ff0077;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: #ff0077;
+            text-transform: uppercase;
+        }
+
+        .game-card:hover .badge {
+            background: #002b24;
+            border-color: #00ffcc;
+            color: #00ffcc;
         }
     </style>
 </head>
 <body>
 
-    <h1>SAVE THE STARS</h1>
-    <canvas id="starsCanvas" width="800" height="600"></canvas>
-    <div class="footer">Developed by Ghulam Fatima</div>
+    <h1>FATIMA'S ARCADE</h1>
+    <div class="subtitle">PREMIUM 6-IN-1 RETRO SYSTEM</div>
 
-    <script src="game.js"></script>
+    <div class="arcade-grid">
+        <a href="Snake_Web_1/index.html" class="game-card">
+            <h3>🐍 SNAKE RETRO</h3>
+            <p>The timeless classic. Eat pixels, grow longer, and survive the maze boundaries.</p>
+            <div class="badge">Launch Engine</div>
+        </a>
+
+        <a href="Spacedouge_Web_2/index.html" class="game-card">
+            <h3>☄️ SPACE DODGE</h3>
+            <p>Navigate through a dangerous asteroid field. Fast-paced reflex testing module.</p>
+            <div class="badge">Launch Engine</div>
+        </a>
+
+        <a href="PingPong_Web_3/index.html" class="game-card">
+            <h3>🏓 PING PONG</h3>
+            <p>Arcade tabletop physics simulation. Precise bounce vector calculation engine.</p>
+            <div class="badge">Launch Engine</div>
+        </a>
+
+        <a href="Turtle_Web_4/index.html" class="game-card">
+            <h3>🐢 TURTLE RACE</h3>
+            <p>Algorithm-driven probability betting simulator with visual physics render.</p>
+            <div class="badge">Launch Engine</div>
+        </a>
+
+        <a href="Star_Web_5/index.html" class="game-card">
+            <h3>🌟 STAR COLLECTOR</h3>
+            <p>Dynamic coordinate generation grid. Gather energy matrix cells before time ends.</p>
+            <div class="badge">Launch Engine</div>
+        </a>
+
+        <a href="SpaceArcade_web_6/index.html" class="game-card">
+            <h3>👾 SPACE INVADERS</h3>
+            <p>Advanced cluster matrix dynamic spawning system. Defend galactic core perimeter.</p>
+            <div class="badge">Launch Engine</div>
+        </a>
+    </div>
+
 </body>
 </html>
