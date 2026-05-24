@@ -24,7 +24,10 @@ let dy = 0;
 
 // Listen for keyboard controls
 window.addEventListener("keydown", handleKeyPress);
+
+// --- INPUT LISTENERS ---
 canvas.addEventListener("click", handleCanvasClick);
+canvas.addEventListener("touchstart", handleMobileTouch, { passive: false });
 
 function handleKeyPress(e) {
     if(["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
@@ -40,6 +43,57 @@ function handleKeyPress(e) {
     if ((e.key === "ArrowRight" || e.key === "d" || e.key === "D") && dx === 0) { dx = 1; dy = 0; }
 }
 
+// LAPTOP MOUSE CLICK DETECTION (SCALED FOR RESPONSIVE CANVAS)
+function handleCanvasClick(e) {
+    if (gameIsOn) return;
+
+    const rect = canvas.getBoundingClientRect();
+    
+    // SCALE CALCULATOR: Converts screen clicks to exact internal 600x600 coordinates
+    const x = ((e.clientX - rect.left) / rect.width) * canvas.width;
+    const y = ((e.clientY - rect.top) / rect.height) * canvas.height;
+
+    // RESTART Button Area Check (190 to 290 X, 340 to 380 Y)
+    if (x > 190 && x < 290 && y > 340 && y < 380) {
+        triggerRestart();
+    } 
+    // CLOSE Button Area Check (310 to 410 X, 340 to 380 Y)
+    else if (x > 310 && x < 410 && y > 340 && y < 380) {
+        canvas.removeEventListener("click", handleCanvasClick);
+        canvas.removeEventListener("touchstart", handleMobileTouch);
+        showExitScreen();
+    }
+}
+
+// MOBILE/TOUCH SCREEN DIRECTION CONTROLLER
+function handleMobileTouch(e) {
+    if (!gameIsOn) return; // Let clicks handle game over state
+
+    e.preventDefault();
+    
+    const rect = canvas.getBoundingClientRect();
+    const touchX = ((e.touches[0].clientX - rect.left) / rect.width) * canvas.width;
+    const touchY = ((e.touches[0].clientY - rect.top) / rect.height) * canvas.height;
+
+    // Invisible swipe/tap pads relative to snake's head position
+    const headCanvasX = snake[0].x * gridSize + gridSize / 2;
+    const headCanvasY = snake[0].y * gridSize + gridSize / 2;
+
+    if (dx !== 0) {
+        if (touchY < headCanvasY) {
+            dx = 0; dy = -1; // Move Up
+        } else {
+            dx = 0; dy = 1;  // Move Down
+        }
+    } else if (dy !== 0) {
+        if (touchX < headCanvasX) {
+            dx = -1; dy = 0; // Move Left
+        } else {
+            dx = 1; dy = 0;  // Move Right
+        }
+    }
+}
+
 function generateFood() {
     food.x = Math.floor(Math.random() * tileCount);
     food.y = Math.floor(Math.random() * tileCount);
@@ -50,6 +104,20 @@ function generateFood() {
             generateFood();
         }
     });
+}
+
+function triggerRestart() {
+    score = 0;
+    snake = [
+        { x: 10, y: 10 },
+        { x: 9, y: 10 },
+        { x: 8, y: 10 }
+    ];
+    dx = 1;
+    dy = 0;
+    gameIsOn = true;
+    generateFood();
+    main();
 }
 
 function main() {
@@ -77,34 +145,29 @@ function clearCanvas() {
 
 function drawSnake() {
     snake.forEach((part, index) => {
-        // Head is bright green, body segments are slightly darker green
         ctx.fillStyle = index === 0 ? "#00ff00" : "#00aa00";
         ctx.fillRect(part.x * gridSize, part.y * gridSize, gridSize - 2, gridSize - 2);
     });
 }
 
 function moveSnake() {
-    // Create new head based on direction offsets
     const head = { x: snake[0].x + dx, y: snake[0].y + dy };
     snake.unshift(head);
 
-    // Check if snake ate the food
     if (snake[0].x === food.x && snake[0].y === food.y) {
         score += 1;
         if (score > highScore) highScore = score;
         generateFood();
     } else {
-        snake.pop(); // Remove tail if it didn't eat
+        snake.pop();
     }
 }
 
 function checkCollision() {
-    // Wall Collisions
     if (snake[0].x < 0 || snake[0].x >= tileCount || snake[0].y < 0 || snake[0].y >= tileCount) {
         gameIsOn = false;
     }
 
-    // Self Body Collisions
     for (let i = 1; i < snake.length; i++) {
         if (snake[i].x === snake[0].x && snake[i].y === snake[0].y) {
             gameIsOn = false;
@@ -143,6 +206,7 @@ function showGameOverMenu() {
     ctx.fillStyle = "gray";
     ctx.fillRect(310, 340, 100, 40);
     ctx.fillStyle = "white";
+    ctx.font = "bold 12px Arial";
     ctx.fillText("CLOSE", 360, 364);
 }
 
@@ -172,34 +236,6 @@ function showExitScreen() {
 function drawFood() {
     ctx.fillStyle = "red";
     ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize - 2, gridSize - 2);
-}
-
-function handleCanvasClick(e) {
-    if (gameIsOn) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    // RESTART Button Area Check (190 to 290 X)
-    if (x > 190 && x < 290 && y > 340 && y < 380) {
-        score = 0;
-        snake = [
-            { x: 10, y: 10 },
-            { x: 9, y: 10 },
-            { x: 8, y: 10 }
-        ];
-        dx = 1;
-        dy = 0;
-        gameIsOn = true;
-        generateFood();
-        main(); // Restart core interval execution
-    } 
-    // CLOSE Button Area Check (310 to 410 X)
-    else if (x > 310 && x < 410 && y > 340 && y < 380) {
-        canvas.removeEventListener("click", handleCanvasClick);
-        showExitScreen();
-    }
 }
 
 // Kickstart game logic
