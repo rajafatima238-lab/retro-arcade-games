@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Dodge - Web Edition</title>
+    <style>
+        body {
+            background-color: #0b0b1a;
+            color: white;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        h1 {
+            color: #ff00ff;
+            margin-bottom: 10px;
+            text-shadow: 0px 0px 10px rgba(255, 0, 255, 0.5);
+        }
+        canvas {
+            border: 4px solid #ff00ff;
+            background-color: #000000;
+            box-shadow: 0px 0px 20px rgba(255, 0, 255, 0.3);
+        }
+        .footer {
+            margin-top: 15px;
+            color: #555577;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>SPACE DODGE ARCADE</h1>
+    <canvas id="spaceCanvas" width="800" height="600"></canvas>
+    <div class="footer">Developed by Ghulam Fatima</div>
+
+    <script src="game.js"></script>
+</body>
+</html>
