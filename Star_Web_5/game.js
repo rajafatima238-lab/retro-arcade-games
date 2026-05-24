@@ -24,6 +24,10 @@ let spawnRate = 32;
 let frameCount = 0;
 let baseFallSpeed = 3.8;
 
+// Control Flags for smooth mobile touch movement
+let touchMoveLeft = false;
+let touchMoveRight = false;
+
 // Keyboard input management
 let keys = {};
 window.addEventListener("keydown", (e) => {
@@ -33,7 +37,51 @@ window.addEventListener("keydown", (e) => {
     }
 });
 window.addEventListener("keyup", (e) => keys[e.key] = false);
+
+// --- ALL INPUT LISTENERS (MOUSE + MOBILE TOUCH) ---
 canvas.addEventListener("click", handleCanvasClick);
+canvas.addEventListener("touchstart", handleMobileTouch, { passive: false });
+canvas.addEventListener("touchmove", handleMobileTouch, { passive: false });
+canvas.addEventListener("touchend", () => {
+    touchMoveLeft = false;
+    touchMoveRight = false;
+}, { passive: false });
+
+// MOBILE TOUCH CONTROLLER (MOVEMENT & BUTTONS)
+function handleMobileTouch(e) {
+    e.preventDefault();
+    
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches[0];
+    
+    // Convert touch layout to exact game internal coordinates
+    const touchX = ((touch.clientX - rect.left) / rect.width) * canvas.width;
+    const touchY = ((touch.clientY - rect.top) / rect.height) * canvas.height;
+
+    // IF GAME OVER: Handle RESTART and CLOSE buttons on touch with scaling
+    if (!gameIsOn) {
+        if (touchX > 290 && touchX < 390 && touchY > 340 && touchY < 380) {
+            triggerRestart();
+        } else if (touchX > 410 && touchX < 510 && touchY > 340 && touchY < 380) {
+            canvas.removeEventListener("click", handleCanvasClick);
+            canvas.removeEventListener("touchstart", handleMobileTouch);
+            showExitScreen();
+        }
+        return;
+    }
+
+    // Active Gameplay: Split screen detection for movement (Left half vs Right half)
+    const canvasDisplayWidth = rect.width;
+    const relativeTouchX = touch.clientX - rect.left;
+
+    if (relativeTouchX < canvasDisplayWidth / 2) {
+        touchMoveLeft = true;
+        touchMoveRight = false;
+    } else {
+        touchMoveRight = true;
+        touchMoveLeft = false;
+    }
+}
 
 function spawnItem() {
     let size = Math.random() * (14 - 9) + 9; 
@@ -51,10 +99,12 @@ function spawnItem() {
 }
 
 function movePlayer() {
-    if (keys["ArrowLeft"] || keys["a"] || keys["A"]) {
+    // Left controls (ArrowLeft or 'a' or Mobile Touch Left)
+    if (keys["ArrowLeft"] || keys["a"] || keys["A"] || touchMoveLeft) {
         if (player.x > 0) player.x -= player.speed;
     }
-    if (keys["ArrowRight"] || keys["d"] || keys["D"]) {
+    // Right controls (ArrowRight or 'd' or Mobile Touch Right)
+    if (keys["ArrowRight"] || keys["d"] || keys["D"] || touchMoveRight) {
         if (player.x < canvas.width - player.width) player.x += player.speed;
     }
 }
@@ -85,6 +135,17 @@ function drawStarShape(cx, cy, spikes, outerRadius, innerRadius) {
     ctx.fill();
 }
 
+function triggerRestart() {
+    score = 0;
+    lives = 3;
+    items = [];
+    frameCount = 0;
+    player.x = 375;
+    animationTimer = 0;
+    gameIsOn = true;
+    requestAnimationFrame(gameLoop);
+}
+
 function gameLoop() {
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -104,7 +165,7 @@ function gameLoop() {
             let item = items[i];
             item.y += item.speed;
 
-            // UNDERSTAND INTENT FIX: Star ya Bomb ground se takraye to aaram se delete ho jaye, koi life minus na ho!
+            // Star ya Bomb ground se takraye to delete ho jaye
             if (item.y - item.size > canvas.height) {
                 items.splice(i, 1);
                 continue;
@@ -124,12 +185,11 @@ function gameLoop() {
                     score++;
                     if (score > highScore) highScore = score;
                 } 
-                // UNDERSTAND INTENT FIX: Bomb se takraate hi 1 Life minus hogi! 3 dafa takrane par Game Over!
                 else if (item.type === "bomb") {
                     lives--;
                     if (lives <= 0) {
                         lives = 0;
-                        gameIsOn = false; // 3 lives complete used, game finish!
+                        gameIsOn = false; // 3 lives used, game finish!
                     }
                 }
             }
@@ -214,6 +274,7 @@ function showGameOverMenu() {
     ctx.fillStyle = "gray";
     ctx.fillRect(410, 340, 100, 40);
     ctx.fillStyle = "white";
+    ctx.font = "bold 12px Arial";
     ctx.fillText("CLOSE", 460, 364);
 }
 
@@ -240,27 +301,24 @@ function showExitScreen() {
     ctx.fillText("Module developed by Ghulam Fatima.", canvas.width / 2, canvas.height / 2 + 130);
 }
 
+// LAPTOP MOUSE CLICK DETECTION (SCALED FOR RESPONSIVE CANVAS)
 function handleCanvasClick(e) {
     if (gameIsOn) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    
+    // Scaled coordinates mapping directly to the game's original width/height layout
+    const x = ((e.clientX - rect.left) / rect.width) * canvas.width;
+    const y = ((e.clientY - rect.top) / rect.height) * canvas.height;
 
-    // RESTART
+    // RESTART Button Area Check (290 to 390 X, 340 to 380 Y)
     if (x > 290 && x < 390 && y > 340 && y < 380) {
-        score = 0;
-        lives = 3;
-        items = [];
-        frameCount = 0;
-        player.x = 375;
-        animationTimer = 0;
-        gameIsOn = true;
-        requestAnimationFrame(gameLoop);
+        triggerRestart();
     } 
-    // CLOSE
+    // CLOSE Button Area Check (410 to 510 X, 340 to 380 Y)
     else if (x > 410 && x < 510 && y > 340 && y < 380) {
         canvas.removeEventListener("click", handleCanvasClick);
+        canvas.removeEventListener("touchstart", handleMobileTouch);
         showExitScreen();
     }
 }
