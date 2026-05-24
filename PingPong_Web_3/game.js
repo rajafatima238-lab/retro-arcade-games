@@ -19,6 +19,12 @@ let ball = { x: 400, y: 300, radius: 10, dx: baseSpeed, dy: baseSpeed, color: "w
 // --- Key State Tracker ---
 let keys = {};
 
+// Mobile touch state track flags
+let touchA_Up = false;
+let touchA_Down = false;
+let touchB_Up = false;
+let touchB_Down = false;
+
 window.addEventListener("keydown", (e) => {
     keys[e.key] = true;
     if(["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
@@ -27,15 +33,85 @@ window.addEventListener("keydown", (e) => {
 });
 window.addEventListener("keyup", (e) => keys[e.key] = false);
 
-// Click Listener for Buttons
+// --- ALL INPUT LISTENERS (MOUSE + MOBILE TOUCH) ---
 canvas.addEventListener("click", handleCanvasClick);
+canvas.addEventListener("touchstart", handleMobileTouch, { passive: false });
+canvas.addEventListener("touchmove", handleMobileTouch, { passive: false });
+canvas.addEventListener("touchend", handleTouchEnd, { passive: false });
+
+// MOBILE TOUCH CONTROLLER (SPLIT SCREEN FOR BOTH PADDLES)
+function handleMobileTouch(e) {
+    e.preventDefault();
+    
+    const rect = canvas.getBoundingClientRect();
+    
+    // IF GAME OVER: Handle RESTART and CLOSE buttons on touch with scaling
+    if (!gameIsOn) {
+        const touch = e.touches[0];
+        const touchX = ((touch.clientX - rect.left) / rect.width) * canvas.width;
+        const touchY = ((touch.clientY - rect.top) / rect.height) * canvas.height;
+        
+        if (touchX > 290 && touchX < 390 && touchY > 340 && touchY < 380) {
+            triggerRestart();
+        } else if (touchX > 410 && touchX < 510 && touchY > 340 && touchY < 380) {
+            canvas.removeEventListener("click", handleCanvasClick);
+            canvas.removeEventListener("touchstart", handleMobileTouch);
+            showExitScreen();
+        }
+        return;
+    }
+
+    // Reset touch flags before scanning current touches
+    touchA_Up = false;
+    touchA_Down = false;
+    touchB_Up = false;
+    touchB_Down = false;
+
+    // Multi-touch logic loop to support both players touching simultaneously
+    for (let i = 0; i < e.touches.length; i++) {
+        const touch = e.touches[i];
+        const relativeX = touch.clientX - rect.left;
+        const relativeY = touch.clientY - rect.top;
+        const canvasDisplayWidth = rect.width;
+        const canvasDisplayHeight = rect.height;
+
+        // Left Half of Screen -> Player A (Blue Paddle)
+        if (relativeX < canvasDisplayWidth / 2) {
+            if (relativeY < canvasDisplayHeight / 2) {
+                touchA_Up = true;
+            } else {
+                touchA_Down = true;
+            }
+        } 
+        // Right Half of Screen -> Player B (Red Paddle)
+        else {
+            if (relativeY < canvasDisplayHeight / 2) {
+                touchB_Up = true;
+            } else {
+                touchB_Down = true;
+            }
+        }
+    }
+}
+
+function handleTouchEnd(e) {
+    e.preventDefault();
+    if (e.touches.length === 0) {
+        touchA_Up = false;
+        touchA_Down = false;
+        touchB_Up = false;
+        touchB_Down = false;
+    }
+}
 
 function movePaddles() {
-    if (keys["w"] || keys["W"]) { if (paddleA.y > 0) paddleA.y -= 6; }
-    if (keys["s"] || keys["S"]) { if (paddleA.y < canvas.height - paddleA.height) paddleA.y += 6; }
+    // Player A Movement (Keys or Touch)
+    if (keys["w"] || keys["W"] || touchA_Up) { if (paddleA.y > 0) paddleA.y -= 6; }
+    if (keys["s"] || keys["S"] || touchA_Down) { if (paddleA.y < canvas.height - paddleA.height) paddleA.y += 6; }
 
-    if (keys["ArrowUp"]) { if (paddleB.y > 0) paddleB.y -= 6; }
-    if (keys["ArrowDown"]) { if (paddleB.y < canvas.height - paddleB.height) paddleB.y += 6; }
+    // Player B Movement (Keys or Touch)
+    if (keys["ArrowUp"] || touchB_Up) { if (paddleB.y > 0) paddleB.y -= 6; }
+    if (keys["ArrowDown"] || touchB_Down) { if (paddleB.y < canvas.height - paddleB.height) paddleB.y += 6; }
 }
 
 function resetBall() {
@@ -57,6 +133,16 @@ function checkWinCondition() {
     if (scoreA === 11 || scoreB === 11) {
         gameIsOn = false;
     }
+}
+
+function triggerRestart() {
+    scoreA = 0;
+    scoreB = 0;
+    gameIsOn = true;
+    paddleA.y = 250;
+    paddleB.y = 250;
+    resetBall();
+    gameLoop();
 }
 
 function gameLoop() {
@@ -154,6 +240,7 @@ function showGameOverMenu() {
     ctx.fillStyle = "gray";
     ctx.fillRect(410, 340, 100, 40);
     ctx.fillStyle = "white";
+    ctx.font = "bold 12px Arial";
     ctx.fillText("CLOSE", 460, 364);
 }
 
@@ -180,22 +267,19 @@ function showExitScreen() {
     ctx.fillText("Module developed by Ghulam Fatima.", canvas.width / 2, canvas.height / 2 + 130);
 }
 
+// --- FIXED LAPTOP MOUSE CLICK WITH RESPONSIVE SCALING ---
 function handleCanvasClick(e) {
     if (gameIsOn) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    
+    // Formula to perfectly map current screen pixels to game matrix (800x600)
+    const x = ((e.clientX - rect.left) / rect.width) * canvas.width;
+    const y = ((e.clientY - rect.top) / rect.height) * canvas.height;
 
     // RESTART Button Click Check
     if (x > 290 && x < 390 && y > 340 && y < 380) {
-        scoreA = 0;
-        scoreB = 0;
-        gameIsOn = true;
-        paddleA.y = 250;
-        paddleB.y = 250;
-        resetBall();
-        gameLoop(); // Restart game loop
+        triggerRestart();
     } 
     // CLOSE Button Click Check
     else if (x > 410 && x < 510 && y > 340 && y < 380) {
